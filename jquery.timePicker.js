@@ -121,15 +121,18 @@
       }
       return true;
     };
+
     // Attach to click as well as focus so timePicker can be shown again when
     // clicking on the input when it already has focus.
     $elm.focus(showPicker).click(showPicker);
+
     // Hide timepicker on blur
     $elm.blur(function() {
       if (!tpOver) {
         $tpDiv.hide();
       }
     });
+
     // Keypress doesn't repeat on Safari for non-text keys.
     // Keydown doesn't repeat on Firefox and Opera on Mac.
     // Using kepress for Opera and Firefox and keydown for the rest seems to
@@ -145,7 +148,7 @@
         case 38: // Up arrow.
           // Just show picker if it's hidden.
           if (showPicker()) {
-            return false;
+            break;
           }
           $selected = $(selectedSelector, $tpList);
           prev = $selected.prev().addClass(selectedClass)[0];
@@ -162,11 +165,11 @@
             prev = $("li:last", $tpList).addClass(selectedClass)[0];
             $tpDiv[0].scrollTop = prev.offsetTop - prev.offsetHeight;
           }
-          return false;
+          e.preventDefault();
           break;
         case 40: // Down arrow, similar in behaviour to up arrow.
           if (showPicker()) {
-            return false;
+            break;
           }
           $selected = $(selectedSelector, $tpList);
           next = $selected.next().addClass(selectedClass)[0];
@@ -181,30 +184,32 @@
             next = $("li:first", $tpList).addClass(selectedClass)[0];
             $tpDiv[0].scrollTop = 0;
           }
-          return false;
+          e.preventDefault();
           break;
         case 13: // Enter
           if ($tpDiv.is(":visible")) {
             sel = $(selectedSelector, $tpList)[0];
             setTimeVal(elm, sel, $tpDiv, settings);
-            return false;
+            e.preventDefault();
           }
           break;
         case 27: // Esc
           $tpDiv.hide();
-          return false;
+          e.preventDefault();
           break;
       }
-      return true;
     });
+
     $elm.keyup(function(e) {
       keyDown = false;
     });
+
     // Helper function to get an inputs current time as Date object.
     // Returns a Date object.
     this.getTime = function() {
       return timeStringToDate($elm.val(), settings);
     };
+
     // Helper function to set a time input.
     // Takes a Date object or string.
     this.setTime = function(time) {
@@ -213,7 +218,6 @@
       // Trigger element's change events.
       $elm.change();
     };
-
   }; // End fn;
 
   // Plugin defaults.
