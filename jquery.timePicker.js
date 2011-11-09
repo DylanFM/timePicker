@@ -37,33 +37,37 @@
 
   $._timePicker = function(elm, settings) {
 
-    var $elm = $(elm);
-    var tpOver = false;
-    var keyDown = false;
-    var startTime = timeToDate(settings.startTime, settings);
-    var endTime = timeToDate(settings.endTime, settings);
-    var selectedClass = "selected";
-    var selectedSelector = "li." + selectedClass;
+    var $elm = $(elm),
+        tpOver = false,
+        keyDown = false,
+        startTime = timeToDate(settings.startTime, settings),
+        endTime = timeToDate(settings.endTime, settings),
+        selectedClass = "selected",
+        selectedSelector = "li." + selectedClass,
+        keyEvent = ($.browser.opera || $.browser.mozilla) ? 'keypress' : 'keydown',
+        times, time, $tpDiv, $tpList, i,
+        showPicker;
 
     $elm.attr('autocomplete', 'OFF'); // Disable browser autocomplete
 
-    var times = [];
-    var time = new Date(startTime); // Create a new date object.
+    times = [];
+    time = new Date(startTime); // Create a new date object.
+
     while(time <= endTime) {
       times[times.length] = formatTime(time, settings);
       time = new Date(time.setMinutes(time.getMinutes() + settings.step));
     }
 
-    var $tpDiv = $('<div class="time-picker'+ (settings.show24Hours ? '' : ' time-picker-12hours') +'"></div>');
-    var $tpList = $('<ul></ul>');
+    $tpDiv = $('<div class="time-picker'+ (settings.show24Hours ? '' : ' time-picker-12hours') +'"></div>');
+    $tpList = $('<ul></ul>');
 
     // Build the list.
-    for(var i = 0; i < times.length; i++) {
+    for(i = 0; i < times.length; i++) {
       $tpList.append("<li>" + times[i] + "</li>");
     }
-    $tpDiv.append($tpList);
-    // Append the timPicker to the body and position it.
-    $tpDiv.appendTo('body').hide();
+    // Append the timePicker to the body and position it.
+    $tpDiv.append($tpList)
+          .appendTo('body').hide();
 
     // Store the mouse state, used by the blur event. Use mouseover instead of
     // mousedown since Opera fires blur before mousedown.
@@ -85,14 +89,16 @@
       tpOver = false;
     });
 
-    var showPicker = function() {
+    showPicker = function() {
+      var elmOffset, time, startMin, min, steps, roundTime, $matchedTime;
+      
       if ($tpDiv.is(":visible")) {
         return false;
       }
       $("li", $tpDiv).removeClass(selectedClass);
 
       // Position
-      var elmOffset = $elm.offset();
+      elmOffset = $elm.offset();
       $tpDiv.css({'top':elmOffset.top + elm.offsetHeight, 'left':elmOffset.left});
 
       // Show picker. This has to be done before scrollTop is set since that
@@ -100,13 +106,13 @@
       $tpDiv.show();
 
       // Try to find a time in the list that matches the entered time.
-      var time = $elm.val().length ? timeStringToDate($elm.val(), settings) : startTime;
-      var startMin = startTime.getHours() * 60 + startTime.getMinutes();
-      var min = (time.getHours() * 60 + time.getMinutes()) - startMin;
-      var steps = Math.round(min / settings.step);
-      var roundTime = normaliseTime(new Date(0, 0, 0, 0, (steps * settings.step + startMin), 0));
+      time = $elm.val().length ? timeStringToDate($elm.val(), settings) : startTime;
+      startMin = startTime.getHours() * 60 + startTime.getMinutes();
+      min = (time.getHours() * 60 + time.getMinutes()) - startMin;
+      steps = Math.round(min / settings.step);
+      roundTime = normaliseTime(new Date(0, 0, 0, 0, (steps * settings.step + startMin), 0));
       roundTime = (startTime < roundTime && roundTime <= endTime) ? roundTime : startTime;
-      var $matchedTime = $("li:contains(" + formatTime(roundTime, settings) + ")", $tpDiv);
+      $matchedTime = $("li:contains(" + formatTime(roundTime, settings) + ")", $tpDiv);
 
       if ($matchedTime.length) {
         $matchedTime.addClass(selectedClass);
@@ -128,11 +134,13 @@
     // Keydown doesn't repeat on Firefox and Opera on Mac.
     // Using kepress for Opera and Firefox and keydown for the rest seems to
     // work with up/down/enter/esc.
-    var event = ($.browser.opera || $.browser.mozilla) ? 'keypress' : 'keydown';
-    $elm[event](function(e) {
-      var $selected;
+    $elm[keyEvent](function(e) {
+      var $selected,
+          top = $tpDiv[0].scrollTop,
+          prev, next, sel;
+
       keyDown = true;
-      var top = $tpDiv[0].scrollTop;
+
       switch (e.keyCode) {
         case 38: // Up arrow.
           // Just show picker if it's hidden.
@@ -140,7 +148,7 @@
             return false;
           }
           $selected = $(selectedSelector, $tpList);
-          var prev = $selected.prev().addClass(selectedClass)[0];
+          prev = $selected.prev().addClass(selectedClass)[0];
           if (prev) {
             $selected.removeClass(selectedClass);
             // Scroll item into view.
@@ -161,7 +169,7 @@
             return false;
           }
           $selected = $(selectedSelector, $tpList);
-          var next = $selected.next().addClass(selectedClass)[0];
+          next = $selected.next().addClass(selectedClass)[0];
           if (next) {
             $selected.removeClass(selectedClass);
             if (next.offsetTop + next.offsetHeight > top + $tpDiv[0].offsetHeight) {
@@ -177,7 +185,7 @@
           break;
         case 13: // Enter
           if ($tpDiv.is(":visible")) {
-            var sel = $(selectedSelector, $tpList)[0];
+            sel = $(selectedSelector, $tpList)[0];
             setTimeVal(elm, sel, $tpDiv, settings);
             return false;
           }
@@ -234,9 +242,9 @@
   }
 
   function formatTime(time, settings) {
-    var h = time.getHours();
-    var hours = settings.show24Hours ? h : (((h + 11) % 12) + 1);
-    var minutes = time.getMinutes();
+    var h = time.getHours(),
+        hours = settings.show24Hours ? h : (((h + 11) % 12) + 1),
+        minutes = time.getMinutes();
     return formatNumber(hours) + settings.separator + formatNumber(minutes) + (settings.show24Hours ? '' : ((h < 12) ? ' AM' : ' PM'));
   }
 
@@ -250,9 +258,10 @@
 
   function timeStringToDate(input, settings) {
     if (input) {
-      var array = input.split(settings.separator);
-      var hours = parseFloat(array[0]);
-      var minutes = parseFloat(array[1]);
+      var array = input.split(settings.separator),
+          hours = parseFloat(array[0]),
+          minutes = parseFloat(array[1]),
+          time;
 
       // Convert AM/PM hour to 24-hour format.
       if (!settings.show24Hours) {
@@ -263,10 +272,10 @@
           hours += 12;
         }
       }
-      var time = new Date(0, 0, 0, hours, minutes, 0);
+      time = new Date(0, 0, 0, hours, minutes, 0);
       return normaliseTime(time);
     }
-    return null;
+    return;
   }
 
   /* Normalise time object to a common date. */
